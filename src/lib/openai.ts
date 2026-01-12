@@ -95,7 +95,6 @@ Analise a imagem e crie um plano personalizado de 30 dias.`
       plan: result.plan
     };
   } catch (error: any) {
-    console.error('Erro ao analisar com GPT-4o-mini:', error);
     throw new Error(`Falha na análise: ${error.message}`);
   }
 }

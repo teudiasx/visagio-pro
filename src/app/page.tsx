@@ -13,7 +13,6 @@ export default function HomePage() {
     // Verificar se existe token no localStorage
     const user = localStorage.getItem('visagio_user');
     setIsLoggedIn(!!user);
-    console.log('[HomePage] Usuário logado:', !!user);
   }, []);
 
   const handleStart = () => {

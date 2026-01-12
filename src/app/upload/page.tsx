@@ -26,16 +26,12 @@ export default function UploadPage() {
   const handleAnalyze = async () => {
     if (!selectedImage) return;
 
-    console.log('[Upload] Iniciando análise da imagem...');
     setUploading(true);
 
     try {
       // Recuperar respostas do quiz
       const quizAnswers = localStorage.getItem('quizAnswers');
-      console.log('[Upload] Respostas do quiz recuperadas:', quizAnswers ? 'Sim' : 'Não');
       
-      console.log('[Upload] Enviando para API /analyze...');
-      console.log('[Upload] User ID:', user?.id || 'não logado');
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
@@ -47,29 +43,20 @@ export default function UploadPage() {
           quizAnswers: quizAnswers ? JSON.parse(quizAnswers) : {},
         }),
       });
-      console.log('[Upload] Resposta recebida. Status:', response.status);
 
       const result = await response.json();
-      console.log('[Upload] Resultado da análise:', result);
-      console.log('[Upload] JSON completo da análise:', JSON.stringify(result.analysis, null, 2));
 
       if (result.success) {
-        console.log('[Upload] Análise bem-sucedida! ID:', result.analysisId);
         localStorage.setItem('currentAnalysisId', result.analysisId);
         localStorage.setItem('analysisResult', JSON.stringify(result.analysis));
         localStorage.setItem('userPhoto', selectedImage);
-        console.log('[Upload] Dados salvos no localStorage (incluindo foto). Redirecionando para /results...');
         router.push('/results');
       } else {
-        console.error('[Upload] Análise falhou:', result.error);
         alert('Erro ao processar análise. Tente novamente.');
       }
     } catch (error) {
-      console.error('[Upload] Erro ao processar análise:', error);
-      console.error('[Upload] Stack trace:', error instanceof Error ? error.stack : 'N/A');
       alert('Erro ao processar análise.');
     } finally {
-      console.log('[Upload] Processo finalizado');
       setUploading(false);
     }
   };

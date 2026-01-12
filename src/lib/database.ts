@@ -11,7 +11,6 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     .single();
 
   if (error) {
-    console.error('Erro ao buscar perfil:', error);
     return null;
   }
 
@@ -27,7 +26,6 @@ export async function updateProfile(userId: string, updates: Partial<Profile>) {
     .single();
 
   if (error) {
-    console.error('Erro ao atualizar perfil:', error);
     return null;
   }
 
@@ -53,7 +51,6 @@ export async function saveQuizResults(userId: string, answers: {
     .single();
 
   if (error) {
-    console.error('Erro ao salvar respostas do quiz:', error);
     return null;
   }
 
@@ -68,7 +65,6 @@ export async function getQuizResults(userId: string): Promise<QuizResult[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Erro ao buscar respostas do quiz:', error);
     return [];
   }
 
@@ -85,7 +81,6 @@ export async function getLatestQuizResult(userId: string): Promise<QuizResult | 
     .single();
 
   if (error) {
-    console.error('Erro ao buscar último quiz:', error);
     return null;
   }
 
@@ -111,7 +106,6 @@ export async function saveAnalysis(userId: string, analysisData: {
     .single();
 
   if (error) {
-    console.error('Erro ao salvar análise:', error);
     return null;
   }
 
@@ -127,7 +121,6 @@ export async function updateAnalysis(analysisId: string, updates: Partial<Analys
     .single();
 
   if (error) {
-    console.error('Erro ao atualizar análise:', error);
     return null;
   }
 
@@ -142,7 +135,6 @@ export async function getAnalyses(userId: string): Promise<Analysis[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Erro ao buscar análises:', error);
     return [];
   }
 
@@ -159,7 +151,6 @@ export async function getLatestAnalysis(userId: string): Promise<Analysis | null
     .single();
 
   if (error) {
-    console.error('Erro ao buscar última análise:', error);
     return null;
   }
 
@@ -176,7 +167,6 @@ export async function getCurrentUser() {
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) {
-    console.error('Erro ao fazer logout:', error);
     return false;
   }
   return true;

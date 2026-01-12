@@ -20,7 +20,6 @@ export default function DashboardPage() {
   const handleDropdownToggle = async () => {
     if (!showDropdown && refreshProfile) {
       // Ao abrir o dropdown, atualizar os dados do perfil
-      console.log('[Dashboard] 🔄 Atualizando dados do perfil...');
       await refreshProfile();
     }
     setShowDropdown(!showDropdown);
@@ -50,14 +49,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadAnalyses = async () => {
       if (user?.id) {
-        console.log('[Dashboard] 📊 Buscando análises do usuário:', user.id);
         setLoadingAnalyses(true);
         try {
           const userAnalyses = await getUserAnalyses(user.id);
-          console.log('[Dashboard] ✅ Análises encontradas:', userAnalyses.length);
           setAnalyses(userAnalyses);
         } catch (error) {
-          console.error('[Dashboard] ❌ Erro ao buscar análises:', error);
         } finally {
           setLoadingAnalyses(false);
         }

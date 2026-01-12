@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (!profile) {
-          console.error('[Webhook] No profile found for customer:', customerId);
           break;
         }
 

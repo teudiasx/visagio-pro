@@ -7,13 +7,10 @@ const openai = new OpenAI({
 });
 
 export async function POST(request: NextRequest) {
-  console.log('[API /analyze] Iniciando análise...');
   try {
     const { userId, imageUrl, quizAnswers } = await request.json();
-    console.log('[API /analyze] Dados recebidos:', { userId, hasImage: !!imageUrl, quizAnswers });
 
     if (!userId || !imageUrl) {
-      console.error('[API /analyze] Erro: userId ou imageUrl faltando');
       return NextResponse.json(
         { error: 'userId e imageUrl são obrigatórios' },
         { status: 400 }
@@ -24,7 +21,6 @@ export async function POST(request: NextRequest) {
     const prompt = `Você é um especialista em análise facial e harmonia estética. Analise a imagem fornecida e retorne um JSON estruturado com as seguintes informações:\n\n{\n  \"analise_morfologica\": {\n    \"formato_rosto\": \"Descrição detalhada do formato do rosto (oval, quadrado, redondo, diamante, etc.)\",\n    \"proporcao_nariz\": \"Análise da proporção e harmonia do nariz em relação ao rosto\",\n    \"simetria_olhos\": \"Avaliação da simetria e posicionamento dos olhos\",\n    \"linha_mandibula\": \"Descrição da definição e contorno da mandíbula\"\n  },\n  \"cronograma_30_dias\": {\n    \"semana_1_cabelo\": {\n      \"titulo\": \"Semana 1: Transformação Capilar\",\n      \"recomendacoes\": [\"Lista de 3-5 recomendações específicas para o cabelo baseadas na análise facial\"],\n      \"produtos_sugeridos\": [\"Lista de produtos recomendados\"],\n      \"dicas_praticas\": [\"Dicas práticas de implementação\"]\n    },\n    \"semana_2_harmonizacao\": {\n      \"titulo\": \"Semana 2: Harmonização e Molduras Faciais\",\n      \"recomendacoes\": [\"Lista de 3-5 recomendações para design de sobrancelhas e traços faciais\"],\n      \"produtos_sugeridos\": [\"Lista de produtos recomendados\"],\n      \"dicas_praticas\": [\"Dicas práticas de implementação\"]\n    },\n    \"semana_3_skincare\": {\n      \"titulo\": \"Semana 3: Rotina de Skincare Personalizada\",\n      \"recomendacoes\": [\"Lista de 3-5 recomendações de skincare baseadas no tipo de pele\"],\n      \"produtos_sugeridos\": [\"Lista de produtos recomendados\"],\n      \"dicas_praticas\": [\"Dicas práticas de implementação\"]\n    },\n    \"semana_4_acessorios\": {\n      \"titulo\": \"Semana 4: Acessórios e Postura\",\n      \"recomendacoes\": [\"Lista de 3-5 recomendações de acessórios que complementam o formato facial\"],\n      \"produtos_sugeridos\": [\"Lista de produtos recomendados\"],\n      \"dicas_praticas\": [\"Dicas de postura e apresentação pessoal\"]\n    }\n  }\n}\n\nIMPORTANTE: \n- Use linguagem universal e inclusiva, sem distinção de gênero\n- Foque em harmonia estética e simetria\n- Seja específico e prático nas recomendações\n- Considere as respostas do quiz: ${JSON.stringify(quizAnswers)}`;
 
     // Chamada para OpenAI Vision API com gpt-4o-mini (modelo de alta eficiência)
-    console.log('[API /analyze] Chamando OpenAI API...');
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -46,7 +42,6 @@ export async function POST(request: NextRequest) {
     });
 
     const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
-    console.log('[API /analyze] Resposta OpenAI recebida com sucesso');
 
     // Normalizar estrutura caso as semanas estejam aninhadas incorretamente
     if (analysisResult.cronograma_30_dias) {
@@ -78,7 +73,6 @@ export async function POST(request: NextRequest) {
     const tempId = 'analysis-' + Date.now();
 
     // Tentar salvar análise no Supabase de forma não-bloqueante
-    console.log('[API /analyze] 💾 Tentando salvar análise no Supabase...');
     try {
       const savedAnalysis = await Promise.race([
         saveAnalysis(
@@ -92,7 +86,6 @@ export async function POST(request: NextRequest) {
       ]);
 
       if (savedAnalysis && typeof savedAnalysis === 'object' && 'id' in savedAnalysis) {
-        console.log('[API /analyze] ✅ Análise salva no Supabase. ID:', savedAnalysis.id);
         return NextResponse.json({
           success: true,
           analysisId: savedAnalysis.id,
@@ -101,11 +94,9 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (error) {
-      console.log('[API /analyze] ⚠️ Erro ao salvar no Supabase (continuando normalmente):', error instanceof Error ? error.message : 'erro desconhecido');
     }
 
     // Retornar dados mesmo se não conseguir salvar no Supabase
-    console.log('[API /analyze] ✅ Retornando análise (salvamento no banco opcional)');
     return NextResponse.json({
       success: true,
       analysisId: tempId,
@@ -113,8 +104,6 @@ export async function POST(request: NextRequest) {
       savedToDatabase: false,
     });
   } catch (error) {
-    console.error('[API /analyze] Erro na análise:', error);
-    console.error('[API /analyze] Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       { error: 'Erro ao processar análise' },
       { status: 500 }

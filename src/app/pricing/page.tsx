@@ -77,7 +77,6 @@ export default function PricingPage() {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
       alert('Erro ao criar sessão de pagamento. Tente novamente.');
       setLoadingPlan(null);
     }

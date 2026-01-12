@@ -36,35 +36,27 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      console.log('[Results] Carregando dados...');
       try {
         // Recuperar foto do localStorage
         const photo = localStorage.getItem('userPhoto');
-        console.log('[Results] Foto recuperada:', photo ? 'Sim' : 'Não');
         setUserPhoto(photo);
 
         // Status de assinatura vem do perfil do Supabase via useAuth
-        console.log('[Results] Status de assinatura:', profile?.subscription_status || 'free');
 
         // Buscar análise do Supabase
         const analysisId = localStorage.getItem('currentAnalysisId');
-        console.log('[Results] Analysis ID:', analysisId);
         if (analysisId) {
-          console.log('[Results] 🔍 Buscando análise no Supabase...');
           const supabaseAnalysis = await getAnalysis(analysisId);
           
           if (supabaseAnalysis) {
-            console.log('[Results] ✅ Análise encontrada no Supabase');
             // analyses_v2 já tem o formato correto como JSON
             const analysisData = supabaseAnalysis.analysis_result;
             setAnalysisData(analysisData);
             // Buscar foto da análise ou do localStorage
             setUserPhoto(supabaseAnalysis.image_url || photo);
           } else {
-            console.log('[Results] ⚠️ Análise não encontrada no Supabase, tentando localStorage...');
             const savedAnalysis = localStorage.getItem('analysisResult');
             if (savedAnalysis) {
-              console.log('[Results] Carregando análise do localStorage (fallback)...');
               const parsedAnalysis = JSON.parse(savedAnalysis);
               setAnalysisData(parsedAnalysis);
             } else {
@@ -151,15 +143,12 @@ export default function ResultsPage() {
                 }
               }
             };
-            console.log('[Results] Usando dados mock');
             setAnalysisData(mockData);
             localStorage.setItem('analysisResult', JSON.stringify(mockData));
             }
           }
         }
       } catch (error) {
-        console.error('[Results] Erro ao carregar dados:', error);
-        console.error('[Results] Stack trace:', error instanceof Error ? error.stack : 'N/A');
       } finally {
         setLoading(false);
       }

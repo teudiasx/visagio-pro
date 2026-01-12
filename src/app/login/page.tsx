@@ -13,7 +13,6 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Login] Iniciando login para:', email);
     setLoading(true);
 
     try {
@@ -24,14 +23,12 @@ export default function LoginPage() {
       };
       
       localStorage.setItem('visagio_user', JSON.stringify(mockUser));
-      console.log('[Login] Login bem-sucedido. Redirecionando para dashboard...');
       
       // Pequeno delay para UX
       setTimeout(() => {
         router.push('/dashboard');
       }, 500);
     } catch (error) {
-      console.error('[Login] Erro ao fazer login:', error);
       alert('Erro ao fazer login. Tente novamente.');
       setLoading(false);
     }

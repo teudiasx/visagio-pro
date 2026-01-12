@@ -73,7 +73,6 @@ export async function createCheckoutSession(
 
     return session;
   } catch (error) {
-    console.error('Erro ao criar sessão de checkout:', error);
     throw error;
   }
 }
@@ -92,7 +91,6 @@ export async function getSubscriptionStatus(customerId: string) {
 
     return subscriptions.data[0] || null;
   } catch (error) {
-    console.error('Erro ao verificar assinatura:', error);
     throw error;
   }
 }

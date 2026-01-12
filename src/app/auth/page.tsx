@@ -17,12 +17,6 @@ export default function AuthPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Auth] ========== INÍCIO ==========');
-    console.log('[Auth] Modo:', isLogin ? 'LOGIN' : 'CADASTRO');
-    console.log('[Auth] Email:', email);
-    console.log('[Auth] Senha length:', password.length);
-    console.log('[Auth] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('[Auth] Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     
     setLoading(true);
     setMessage('');
@@ -30,33 +24,26 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         // Login com Supabase
-        console.log('[Auth] 🔐 Chamando supabase.auth.signInWithPassword...');
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        console.log('[Auth] Resposta do login:', { 
           hasUser: !!data.user, 
           hasSession: !!data.session,
           error: error?.message 
         });
 
         if (error) {
-          console.error('[Auth] ❌ Erro ao fazer login:', error);
           setMessage(`❌ ${error.message}`);
           setLoading(false);
           return;
         }
         
-        console.log('[Auth] ✅ Login bem-sucedido:', data.user?.email);
-        console.log('[Auth] User ID:', data.user?.id);
         
         // Buscar ou criar perfil usando helper
         if (data.user) {
-          console.log('[Auth] 📝 Buscando/criando perfil...');
           const profile = await getOrCreateProfile(data.user.id, data.user.email!);
-          console.log('[Auth] Perfil retornado:', profile);
           
           // Salvar também no localStorage para compatibilidade
           localStorage.setItem('visagio_user', JSON.stringify({
@@ -65,13 +52,11 @@ export default function AuthPage() {
           }));
         }
         
-        console.log('[Auth] 🚀 Redirecionando para dashboard...');
         await new Promise(resolve => setTimeout(resolve, 500));
         router.push('/dashboard');
         
       } else {
         // Cadastro com Supabase
-        console.log('[Auth] 📝 Chamando supabase.auth.signUp...');
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -83,7 +68,6 @@ export default function AuthPage() {
           },
         });
 
-        console.log('[Auth] Resposta do cadastro:', { 
           hasUser: !!data.user,
           userId: data.user?.id,
           hasSession: !!data.session,
@@ -91,20 +75,14 @@ export default function AuthPage() {
         });
 
         if (error) {
-          console.error('[Auth] ❌ Erro ao fazer cadastro:', error);
           setMessage(`❌ ${error.message}`);
           setLoading(false);
           return;
         }
 
-        console.log('[Auth] ✅ Cadastro realizado!');
-        console.log('[Auth] User:', data.user?.email);
-        console.log('[Auth] User ID:', data.user?.id);
-        console.log('[Auth] Tem sessão?', !!data.session);
 
         // Verificar se precisa de confirmação de email
         if (data.user && !data.session) {
-          console.log('[Auth] ⚠️ Confirmação de email necessária (session null)');
           setMessage('✅ Cadastro realizado! Verifique seu e-mail para confirmar.');
           setLoading(false);
           return;
@@ -112,12 +90,9 @@ export default function AuthPage() {
 
         // Se a sessão foi criada imediatamente (email confirmation desabilitado)
         if (data.user && data.session) {
-          console.log('[Auth] ✅ Sessão criada imediatamente!');
-          console.log('[Auth] 📝 Criando perfil na tabela profiles...');
           
           // Criar perfil usando helper
           const profile = await getOrCreateProfile(data.user.id, data.user.email!);
-          console.log('[Auth] Perfil criado/retornado:', profile);
 
           // Salvar no localStorage
           localStorage.setItem('visagio_user', JSON.stringify({
@@ -125,21 +100,15 @@ export default function AuthPage() {
             email: data.user.email,
           }));
 
-          console.log('[Auth] 🚀 Redirecionando para dashboard...');
           await new Promise(resolve => setTimeout(resolve, 500));
           router.push('/dashboard');
         } else {
-          console.log('[Auth] ⚠️ Situação inesperada - user existe mas não tem session');
-          console.log('[Auth] Data completo:', JSON.stringify(data, null, 2));
         }
       }
     } catch (error: any) {
-      console.error('[Auth] 💥 EXCEÇÃO CAPTURADA:', error);
-      console.error('[Auth] Stack:', error.stack);
       setMessage(`❌ Erro: ${error.message}`);
       setLoading(false);
     } finally {
-      console.log('[Auth] ========== FIM ==========');
     }
   };
 

@@ -8,13 +8,11 @@ export async function checkAuth() {
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.error('Erro ao verificar autenticação:', error);
       return null;
     }
 
     return session?.user || null;
   } catch (error) {
-    console.error('Erro ao verificar autenticação:', error);
     return null;
   }
 }
@@ -55,7 +53,6 @@ export async function getOrCreateProfile(userId: string, email: string) {
       // Se erro ao inserir, verificar se é porque a tabela não existe
       if (insertError?.code === '42P01') {
         // Tabela não existe - retornar perfil mock
-        console.warn('⚠️ Tabela profiles não existe. Usando perfil temporário.');
         return {
           id: userId,
           email: email,
@@ -66,13 +63,11 @@ export async function getOrCreateProfile(userId: string, email: string) {
       }
 
       if (insertError) {
-        console.error('Erro ao criar perfil:', insertError);
       }
     }
 
     // Se a tabela não existe, retornar perfil mock
     if (fetchError?.code === '42P01') {
-      console.warn('⚠️ Tabela profiles não existe. Usando perfil temporário.');
       return {
         id: userId,
         email: email,
@@ -92,7 +87,6 @@ export async function getOrCreateProfile(userId: string, email: string) {
       return null;
     }
     
-    console.error('Erro ao obter/criar perfil:', error);
     return null;
   }
 }
@@ -105,7 +99,6 @@ export async function logout() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error('Erro ao fazer logout:', error);
       return false;
     }
 
@@ -118,7 +111,6 @@ export async function logout() {
 
     return true;
   } catch (error) {
-    console.error('Erro ao fazer logout:', error);
     return false;
   }
 }
@@ -161,13 +153,11 @@ export async function updateSubscriptionStatus(
       .eq('id', userId);
 
     if (error) {
-      console.error('Erro ao atualizar assinatura:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Erro ao atualizar assinatura:', error);
     return false;
   }
 }
@@ -191,13 +181,11 @@ export async function saveQuizResult(userId: string, answers: any) {
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao salvar resultado do quiz:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao salvar resultado do quiz:', error);
     return null;
   }
 }
@@ -224,7 +212,6 @@ export async function saveAnalysis(
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao salvar análise:', {
         message: error.message,
         details: error.details,
         hint: error.hint,
@@ -235,7 +222,6 @@ export async function saveAnalysis(
 
     return data;
   } catch (error) {
-    console.error('Erro ao salvar análise:', error);
     return null;
   }
 }
@@ -252,13 +238,11 @@ export async function getAnalysis(analysisId: string) {
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao buscar análise:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao buscar análise:', error);
     return null;
   }
 }
@@ -275,13 +259,11 @@ export async function getUserAnalyses(userId: string) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erro ao buscar análises do usuário:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Erro ao buscar análises do usuário:', error);
     return [];
   }
 }

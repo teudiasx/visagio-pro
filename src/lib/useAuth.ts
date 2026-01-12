@@ -13,7 +13,6 @@ export function useAuth() {
 
   const fetchProfile = async (userId: string, email: string) => {
     try {
-      console.log('[useAuth] 🔍 Buscando perfil do Supabase para:', email);
       
       const { data: profileData, error } = await supabase
         .from('profiles')
@@ -22,7 +21,6 @@ export function useAuth() {
         .maybeSingle();
 
       if (error) {
-        console.error('[useAuth] ❌ Erro ao buscar perfil:', error);
         // Usar perfil mock se houver erro
         return {
           id: userId,
@@ -34,14 +32,12 @@ export function useAuth() {
       }
 
       if (profileData) {
-        console.log('[useAuth] ✅ Perfil encontrado:', {
           email: profileData.email,
           status: profileData.subscription_status
         });
         return profileData;
       }
 
-      console.log('[useAuth] ⚠️ Perfil não encontrado, usando mock');
       return {
         id: userId,
         email: email,
@@ -50,7 +46,6 @@ export function useAuth() {
         updated_at: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('[useAuth] ❌ Exceção ao buscar perfil:', error);
       return {
         id: userId,
         email: email,
@@ -63,12 +58,10 @@ export function useAuth() {
 
   useEffect(() => {
     const loadAuth = async () => {
-      console.log('[useAuth] Verificando autenticação...');
       // Verificar se há usuário no localStorage
       const savedUser = localStorage.getItem('visagio_user');
       if (savedUser) {
         try {
-          console.log('[useAuth] Usuário encontrado no localStorage');
           const userData = JSON.parse(savedUser);
           setUser(userData);
           
@@ -76,13 +69,10 @@ export function useAuth() {
           const profileData = await fetchProfile(userData.id, userData.email);
           setProfile(profileData);
         } catch (error) {
-          console.error('[useAuth] Erro ao parsear dados do usuário:', error);
           localStorage.removeItem('visagio_user');
         }
       } else {
-        console.log('[useAuth] Nenhum usuário encontrado no localStorage');
       }
-      console.log('[useAuth] Autenticação verificada');
       setLoading(false);
     };
 
@@ -90,13 +80,11 @@ export function useAuth() {
   }, []);
 
   const login = (email: string, password: string) => {
-    console.log('[useAuth] Login iniciado para:', email);
     // Simulação de login - aceitar qualquer email/senha
     const mockUser = {
       id: 'mock-' + Date.now(),
       email: email,
     };
-    console.log('[useAuth] Mock user criado:', mockUser.id);
     localStorage.setItem('visagio_user', JSON.stringify(mockUser));
     setUser(mockUser);
     setProfile({
@@ -110,7 +98,6 @@ export function useAuth() {
   };
 
   const logout = () => {
-    console.log('[useAuth] Logout realizado');
     localStorage.removeItem('visagio_user');
     setUser(null);
     setProfile(null);
@@ -118,7 +105,6 @@ export function useAuth() {
 
   const refreshProfile = async () => {
     if (user) {
-      console.log('[useAuth] 🔄 Atualizando perfil...');
       const profileData = await fetchProfile(user.id, user.email);
       setProfile(profileData);
     }

@@ -18,9 +18,6 @@ export default function CadastroPage() {
 
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Cadastro] ========== INÍCIO ==========');
-    console.log('[Cadastro] Email:', email);
-    console.log('[Cadastro] Nome:', name);
 
     if (password !== confirmPassword) {
       alert('As senhas não coincidem!');
@@ -37,7 +34,6 @@ export default function CadastroPage() {
 
     try {
       // Cadastro com Supabase
-      console.log('[Cadastro] 📝 Chamando supabase.auth.signUp...');
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -50,7 +46,6 @@ export default function CadastroPage() {
         },
       });
 
-      console.log('[Cadastro] Resposta do cadastro:', { 
         hasUser: !!data.user,
         userId: data.user?.id,
         hasSession: !!data.session,
@@ -58,19 +53,14 @@ export default function CadastroPage() {
       });
 
       if (error) {
-        console.error('[Cadastro] ❌ Erro ao fazer cadastro:', error);
         setMessage(`❌ ${error.message}`);
         setLoading(false);
         return;
       }
 
-      console.log('[Cadastro] ✅ Usuário criado no Supabase Auth!');
-      console.log('[Cadastro] User ID:', data.user?.id);
-      console.log('[Cadastro] Tem sessão?', !!data.session);
 
       // Verificar se precisa de confirmação de email
       if (data.user && !data.session) {
-        console.log('[Cadastro] ⚠️ Confirmação de email necessária');
         setMessage('✅ Cadastro realizado! Verifique seu e-mail para confirmar.');
         setLoading(false);
         return;
@@ -78,12 +68,9 @@ export default function CadastroPage() {
 
       // Se a sessão foi criada imediatamente (email confirmation desabilitado)
       if (data.user && data.session) {
-        console.log('[Cadastro] ✅ Sessão criada imediatamente!');
-        console.log('[Cadastro] 📝 Criando perfil na tabela profiles...');
         
         // Criar perfil usando helper
         const profile = await getOrCreateProfile(data.user.id, data.user.email!);
-        console.log('[Cadastro] Perfil criado/retornado:', profile);
 
         // Salvar no localStorage
         localStorage.setItem('visagio_user', JSON.stringify({
@@ -91,19 +78,14 @@ export default function CadastroPage() {
           email: data.user.email,
           name: name,
         }));
-        console.log('[Cadastro] ✅ Dados salvos no localStorage');
 
-        console.log('[Cadastro] 🚀 Redirecionando para dashboard...');
         await new Promise(resolve => setTimeout(resolve, 500));
         router.push('/dashboard');
       }
     } catch (error: any) {
-      console.error('[Cadastro] 💥 EXCEÇÃO:', error);
-      console.error('[Cadastro] Stack:', error.stack);
       setMessage(`❌ Erro: ${error.message}`);
       setLoading(false);
     } finally {
-      console.log('[Cadastro] ========== FIM ==========');
     }
   };
 

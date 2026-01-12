@@ -28,11 +28,8 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error('[Webhook] Signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
-
-  console.log('[Webhook] Event received:', event.type);
 
   try {
     switch (event.type) {
@@ -41,7 +38,6 @@ export async function POST(request: NextRequest) {
         const userId = session.metadata?.userId;
 
         if (!userId) {
-          console.error('[Webhook] No userId in metadata');
           break;
         }
 
@@ -60,8 +56,6 @@ export async function POST(request: NextRequest) {
           subscriptionStatus = 'standard';
         }
 
-        console.log('[Webhook] Updating subscription for user:', userId, 'to:', subscriptionStatus);
-
         // Atualizar o perfil do usuário no Supabase
         const { error } = await supabase
           .from('profiles')
@@ -73,11 +67,6 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', userId);
 
-        if (error) {
-          console.error('[Webhook] Error updating profile:', error);
-        } else {
-          console.log('[Webhook] ✅ Profile updated successfully');
-        }
         break;
       }
 
@@ -89,7 +78,6 @@ export async function POST(request: NextRequest) {
           : invoice.subscription?.id;
 
         if (!subscriptionId) {
-          console.log('[Webhook] Invoice without subscription, skipping');
           break;
         }
 
@@ -118,8 +106,6 @@ export async function POST(request: NextRequest) {
           subscriptionStatus = 'standard';
         }
 
-        console.log('[Webhook] Invoice paid - Updating user:', profile.id, 'to:', subscriptionStatus);
-
         // Atualizar o perfil
         const { error } = await supabase
           .from('profiles')
@@ -131,11 +117,6 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', profile.id);
 
-        if (error) {
-          console.error('[Webhook] Error updating profile:', error);
-        } else {
-          console.log('[Webhook] ✅ Profile updated from invoice payment');
-        }
         break;
       }
 
@@ -152,7 +133,6 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (!profile) {
-          console.error('[Webhook] No profile found for customer:', customerId);
           break;
         }
 
@@ -167,8 +147,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log('[Webhook] Updating subscription status for user:', profile.id, 'to:', newStatus);
-
         await supabase
           .from('profiles')
           .update({
@@ -177,17 +155,15 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', profile.id);
 
-        console.log('[Webhook] ✅ Subscription status updated');
         break;
       }
 
       default:
-        console.log('[Webhook] Unhandled event type:', event.type);
+        break;
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('[Webhook] Error processing event:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

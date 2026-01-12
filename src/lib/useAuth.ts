@@ -32,9 +32,6 @@ export function useAuth() {
       }
 
       if (profileData) {
-          email: profileData.email,
-          status: profileData.subscription_status
-        });
         return profileData;
       }
 

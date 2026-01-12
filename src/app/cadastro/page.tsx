@@ -46,12 +46,6 @@ export default function CadastroPage() {
         },
       });
 
-        hasUser: !!data.user,
-        userId: data.user?.id,
-        hasSession: !!data.session,
-        error: error?.message 
-      });
-
       if (error) {
         setMessage(`❌ ${error.message}`);
         setLoading(false);

@@ -29,11 +29,6 @@ export default function AuthPage() {
           password,
         });
 
-          hasUser: !!data.user, 
-          hasSession: !!data.session,
-          error: error?.message 
-        });
-
         if (error) {
           setMessage(`❌ ${error.message}`);
           setLoading(false);
@@ -68,12 +63,6 @@ export default function AuthPage() {
           },
         });
 
-          hasUser: !!data.user,
-          userId: data.user?.id,
-          hasSession: !!data.session,
-          error: error?.message 
-        });
-
         if (error) {
           setMessage(`❌ ${error.message}`);
           setLoading(false);
@@ -102,13 +91,11 @@ export default function AuthPage() {
 
           await new Promise(resolve => setTimeout(resolve, 500));
           router.push('/dashboard');
-        } else {
         }
       }
     } catch (error: any) {
       setMessage(`❌ Erro: ${error.message}`);
       setLoading(false);
-    } finally {
     }
   };
 

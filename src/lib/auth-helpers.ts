@@ -212,11 +212,6 @@ export async function saveAnalysis(
       .maybeSingle();
 
     if (error) {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       return null;
     }
 

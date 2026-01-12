@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-black text-white font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#8A2BE2] hover:bg-[#7A1FCF] text-white px-6 py-3 rounded-lg font-medium transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent border border-[#8A2BE2] text-[#8A2BE2] hover:bg-[#8A2BE2] hover:text-white px-6 py-3 rounded-lg font-medium transition-colors;
+  }
+  
+  .container-blur {
+    @apply backdrop-blur-md bg-black/20 border border-white/10 rounded-lg p-6;
+  }
+}

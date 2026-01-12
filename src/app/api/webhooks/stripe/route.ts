@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        // Buscar a assinatura para determinar o plano
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
@@ -49,14 +48,12 @@ export async function POST(request: NextRequest) {
         const priceId = subscription.items.data[0].price.id;
         let subscriptionStatus: 'standard' | 'premium' = 'standard';
 
-        // Determinar o plano baseado no priceId
         if (priceId === process.env.STRIPE_PRICE_PREMIUM) {
           subscriptionStatus = 'premium';
         } else if (priceId === process.env.STRIPE_PRICE_STANDARD) {
           subscriptionStatus = 'standard';
         }
 
-        // Atualizar o perfil do usuário no Supabase
         const { error } = await supabase
           .from('profiles')
           .update({

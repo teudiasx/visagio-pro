@@ -13,15 +13,13 @@ export function useAuth() {
 
   const fetchProfile = async (userId: string, email: string) => {
     try {
-      
       const { data: profileData, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, subscription_status, stripe_customer_id, stripe_subscription_id, subscription_started_at, created_at, updated_at')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) {
-        // Usar perfil mock se houver erro
         return {
           id: userId,
           email: email,
@@ -34,7 +32,6 @@ export function useAuth() {
       if (profileData) {
         return profileData;
       }
-
       return {
         id: userId,
         email: email,
@@ -55,20 +52,18 @@ export function useAuth() {
 
   useEffect(() => {
     const loadAuth = async () => {
-      // Verificar se há usuário no localStorage
       const savedUser = localStorage.getItem('visagio_user');
+      
       if (savedUser) {
         try {
           const userData = JSON.parse(savedUser);
           setUser(userData);
           
-          // Buscar perfil real do Supabase
           const profileData = await fetchProfile(userData.id, userData.email);
           setProfile(profileData);
         } catch (error) {
           localStorage.removeItem('visagio_user');
         }
-      } else {
       }
       setLoading(false);
     };

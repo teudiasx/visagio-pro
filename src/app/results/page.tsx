@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Lock, ArrowLeft, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/useAuth';
 import { getAnalysis } from '@/lib/auth-helpers';
-import { isWeekUnlocked, getWeekUnlockDate, formatUnlockDate } from '@/lib/subscription-utils';
 
 interface AnalysisData {
   analise_morfologica: {
@@ -29,22 +28,44 @@ interface WeekData {
   dicas_praticas: string[];
 }
 
+interface AccessInfo {
+  subscriptionStatus: string;
+  unlockedWeeksCount: number;
+  canViewBasicAnalysis: boolean;
+  weeks: {
+    week1: { unlocked: boolean; unlockDate: string | null };
+    week2: { unlocked: boolean; unlockDate: string | null };
+    week3: { unlocked: boolean; unlockDate: string | null };
+    week4: { unlocked: boolean; unlockDate: string | null };
+  };
+}
+
 export default function ResultsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
+  const [accessInfo, setAccessInfo] = useState<AccessInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Recuperar foto do localStorage
         const photo = localStorage.getItem('userPhoto');
         setUserPhoto(photo);
 
-        // Status de assinatura vem do perfil do Supabase via useAuth
+        if (user?.id) {
+          const response = await fetch('/api/get-user-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setAccessInfo(data);
+          }
+        }
 
-        // Buscar análise do Supabase
         const analysisId = localStorage.getItem('currentAnalysisId');
         if (analysisId) {
           const supabaseAnalysis = await getAnalysis(analysisId);
@@ -156,31 +177,44 @@ export default function ResultsPage() {
     };
 
     loadData();
-  }, [profile]);
+  }, [user]);
 
-  const subscriptionStatus = profile?.subscription_status || 'free';
-  const subscriptionStartedAt = profile?.subscription_started_at || null;
-  
-  // Análise básica morfológica: Standard e Premium veem sempre
-  const canViewBasicAnalysis = subscriptionStatus === 'standard' || subscriptionStatus === 'premium';
-  
-  // Sistema de liberação progressiva
-  const canViewWeek1 = isWeekUnlocked(1, subscriptionStartedAt, subscriptionStatus);
-  const canViewWeek2 = isWeekUnlocked(2, subscriptionStartedAt, subscriptionStatus);
-  const canViewWeek3 = isWeekUnlocked(3, subscriptionStartedAt, subscriptionStatus);
-  const canViewWeek4 = isWeekUnlocked(4, subscriptionStartedAt, subscriptionStatus);
+  if (!accessInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white text-xl">Carregando análise...</p>
+      </div>
+    );
+  }
+
+  const subscriptionStatus = accessInfo.subscriptionStatus;
+  const canViewBasicAnalysis = accessInfo.canViewBasicAnalysis;
+  const canViewWeek1 = accessInfo.weeks.week1.unlocked;
+  const canViewWeek2 = accessInfo.weeks.week2.unlocked;
+  const canViewWeek3 = accessInfo.weeks.week3.unlocked;
+  const canViewWeek4 = accessInfo.weeks.week4.unlocked;
 
   const renderBlurredContent = (content: string, weekNumber?: number) => {
     let message = 'Conteúdo exclusivo para assinantes. Faça upgrade para desbloquear.';
     let showUnlockDate = false;
-    let unlockDate: Date | null = null;
+    let unlockDateStr: string | null = null;
 
-    // Se tem subscription mas a semana ainda não foi liberada, mostrar data
-    if (weekNumber && subscriptionStartedAt && subscriptionStatus !== 'free') {
-      unlockDate = getWeekUnlockDate(weekNumber, subscriptionStartedAt);
-      if (unlockDate && unlockDate > new Date()) {
-        showUnlockDate = true;
-        message = `Será liberado em ${formatUnlockDate(unlockDate)}`;
+    if (weekNumber && subscriptionStatus !== 'free') {
+      const weekKey = `week${weekNumber}` as 'week1' | 'week2' | 'week3' | 'week4';
+      const weekInfo = accessInfo.weeks[weekKey];
+      
+      if (weekInfo.unlockDate) {
+        const unlockDate = new Date(weekInfo.unlockDate);
+        const now = new Date();
+        
+        if (unlockDate > now) {
+          showUnlockDate = true;
+          message = `Será liberado em ${unlockDate.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })}`;
+        }
       }
     }
 

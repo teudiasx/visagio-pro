@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lock, ArrowLeft } from 'lucide-react';
+import { Lock, ArrowLeft, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/useAuth';
 import { getAnalysis } from '@/lib/auth-helpers';
+import { isWeekUnlocked, getWeekUnlockDate, formatUnlockDate } from '@/lib/subscription-utils';
 
 interface AnalysisData {
   analise_morfologica: {
@@ -158,25 +159,58 @@ export default function ResultsPage() {
   }, [profile]);
 
   const subscriptionStatus = profile?.subscription_status || 'free';
+  const subscriptionStartedAt = profile?.subscription_started_at || null;
+  
+  // Análise básica morfológica: Standard e Premium veem sempre
   const canViewBasicAnalysis = subscriptionStatus === 'standard' || subscriptionStatus === 'premium';
-  const canViewWeek1And2 = subscriptionStatus === 'standard' || subscriptionStatus === 'premium';
-  const canViewWeek3And4 = subscriptionStatus === 'premium';
+  
+  // Sistema de liberação progressiva
+  const canViewWeek1 = isWeekUnlocked(1, subscriptionStartedAt, subscriptionStatus);
+  const canViewWeek2 = isWeekUnlocked(2, subscriptionStartedAt, subscriptionStatus);
+  const canViewWeek3 = isWeekUnlocked(3, subscriptionStartedAt, subscriptionStatus);
+  const canViewWeek4 = isWeekUnlocked(4, subscriptionStartedAt, subscriptionStatus);
 
-  const renderBlurredContent = (content: string) => (
-    <div className="relative">
-      <div className="blur-[12px] select-none pointer-events-none">
-        <p className="text-[#E0E0E0]">{content}</p>
-      </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Lock className="w-10 h-10 mb-2" style={{ color: '#C0C0C0', filter: 'drop-shadow(0 0 10px rgba(192, 192, 192, 0.8))' }} />
-        <span className="text-[#FFFFFF] font-bold text-sm" style={{ textShadow: '0 0 10px rgba(157, 80, 187, 0.8)' }}>
-          Conteúdo Exclusivo
-        </span>
-      </div>
-    </div>
-  );
+  const renderBlurredContent = (content: string, weekNumber?: number) => {
+    let message = 'Conteúdo exclusivo para assinantes. Faça upgrade para desbloquear.';
+    let showUnlockDate = false;
+    let unlockDate: Date | null = null;
 
-  const renderWeekContent = (weekData: WeekData | undefined, canView: boolean) => {
+    // Se tem subscription mas a semana ainda não foi liberada, mostrar data
+    if (weekNumber && subscriptionStartedAt && subscriptionStatus !== 'free') {
+      unlockDate = getWeekUnlockDate(weekNumber, subscriptionStartedAt);
+      if (unlockDate && unlockDate > new Date()) {
+        showUnlockDate = true;
+        message = `Será liberado em ${formatUnlockDate(unlockDate)}`;
+      }
+    }
+
+    return (
+      <div className="relative">
+        <div className="blur-[12px] select-none pointer-events-none">
+          <p className="text-[#E0E0E0]">{content}</p>
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          {showUnlockDate ? (
+            <>
+              <Clock className="w-10 h-10 mb-2" style={{ color: '#C0C0C0', filter: 'drop-shadow(0 0 10px rgba(192, 192, 192, 0.8))' }} />
+              <span className="text-[#FFFFFF] font-bold text-sm text-center px-4" style={{ textShadow: '0 0 10px rgba(157, 80, 187, 0.8)' }}>
+                {message}
+              </span>
+            </>
+          ) : (
+            <>
+              <Lock className="w-10 h-10 mb-2" style={{ color: '#C0C0C0', filter: 'drop-shadow(0 0 10px rgba(192, 192, 192, 0.8))' }} />
+              <span className="text-[#FFFFFF] font-bold text-sm text-center px-4" style={{ textShadow: '0 0 10px rgba(157, 80, 187, 0.8)' }}>
+                {message}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekContent = (weekData: WeekData | undefined, canView: boolean, weekNumber?: number) => {
     if (canView && weekData && weekData.recomendacoes && weekData.produtos_sugeridos && weekData.dicas_praticas) {
       return (
         <div className="space-y-4">
@@ -207,7 +241,7 @@ export default function ResultsPage() {
         </div>
       );
     }
-    return renderBlurredContent('Conteúdo exclusivo para assinantes. Faça upgrade para desbloquear.');
+    return renderBlurredContent('Conteúdo exclusivo para assinantes. Faça upgrade para desbloquear.', weekNumber);
   };
 
   if (loading || authLoading) {
@@ -314,7 +348,7 @@ export default function ResultsPage() {
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
               {analysisData?.cronograma_30_dias?.semana_1_cabelo?.titulo || 'Semana 1: Transformação Capilar'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_1_cabelo, canViewWeek1And2)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_1_cabelo, canViewWeek1, 1)}
           </div>
 
           {/* Semana 2 */}
@@ -322,7 +356,7 @@ export default function ResultsPage() {
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
               {analysisData?.cronograma_30_dias?.semana_2_harmonizacao?.titulo || 'Semana 2: Harmonização e Molduras Faciais'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_2_harmonizacao, canViewWeek1And2)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_2_harmonizacao, canViewWeek2, 2)}
           </div>
 
           {/* Semana 3 */}
@@ -330,7 +364,7 @@ export default function ResultsPage() {
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
               {analysisData?.cronograma_30_dias?.semana_3_skincare?.titulo || 'Semana 3: Rotina de Skincare Personalizada'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_3_skincare, canViewWeek3And4)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_3_skincare, canViewWeek3, 3)}
           </div>
 
           {/* Semana 4 */}
@@ -338,7 +372,7 @@ export default function ResultsPage() {
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
               {analysisData?.cronograma_30_dias?.semana_4_acessorios?.titulo || 'Semana 4: Acessórios e Postura'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_4_acessorios, canViewWeek3And4)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_4_acessorios, canViewWeek4, 4)}
           </div>
         </div>
 

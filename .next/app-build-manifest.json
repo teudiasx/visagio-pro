@@ -1,35 +1,25 @@
 {
   "pages": {
-    "/api/create-checkout/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/create-checkout/route.js"
-    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/pricing/page": [
+    "/quiz/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pricing/page.js"
+      "static/chunks/app/quiz/page.js"
     ],
-    "/page": [
+    "/upload/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/upload/page.js"
     ],
-    "/dashboard/page": [
+    "/api/analyze/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/page.js"
-    ],
-    "/auth/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/auth/page.js"
+      "static/chunks/app/api/analyze/route.js"
     ],
     "/results/page": [
       "static/chunks/webpack.js",

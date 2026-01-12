@@ -1,14 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, Star, CheckCircle } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Verificar se existe token no localStorage
+    const user = localStorage.getItem('visagio_user');
+    setIsLoggedIn(!!user);
+    console.log('[HomePage] Usuário logado:', !!user);
+  }, []);
 
   const handleStart = () => {
-    router.push('/quiz');
+    if (isLoggedIn) {
+      router.push('/quiz');
+    } else {
+      router.push('/auth');
+    }
   };
 
   return (
@@ -21,12 +34,29 @@ export default function HomePage() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-gray-300 hover:text-white transition-colors"
-            >
-              Dashboard
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/auth"
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/cadastro"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#8A2BE2] to-[#9D4EDD] text-white font-medium hover:opacity-90 transition-opacity"
+                >
+                  Cadastro
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

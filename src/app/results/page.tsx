@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/lib/useAuth';
+import { getAnalysis } from '@/lib/auth-helpers';
 
 interface AnalysisData {
   analise_morfologica: {
@@ -27,33 +29,47 @@ interface WeekData {
 }
 
 export default function ResultsPage() {
+  const { profile, loading: authLoading } = useAuth();
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<'free' | 'standard' | 'premium'>('free');
-  const [userEmail, setUserEmail] = useState<string>('usuario@exemplo.com');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('[Results] Carregando dados...');
       try {
         // Recuperar foto do localStorage
         const photo = localStorage.getItem('userPhoto');
+        console.log('[Results] Foto recuperada:', photo ? 'Sim' : 'Não');
         setUserPhoto(photo);
 
-        // Simular status de assinatura (pode ser expandido para usar localStorage ou API)
-        setSubscriptionStatus('free'); // Mock - pode ser 'premium' para testar
+        // Status de assinatura vem do perfil do Supabase via useAuth
+        console.log('[Results] Status de assinatura:', profile?.subscription_status || 'free');
 
-        // Buscar análise do localStorage (salva pela API)
+        // Buscar análise do Supabase
         const analysisId = localStorage.getItem('currentAnalysisId');
+        console.log('[Results] Analysis ID:', analysisId);
         if (analysisId) {
-          // Como a API salva no Supabase, mas para mock, vamos buscar do localStorage
-          // Se não tiver, pode buscar da API ou usar dados mock
-          const savedAnalysis = localStorage.getItem('analysisResult');
-          if (savedAnalysis) {
-            setAnalysisData(JSON.parse(savedAnalysis));
+          console.log('[Results] 🔍 Buscando análise no Supabase...');
+          const supabaseAnalysis = await getAnalysis(analysisId);
+          
+          if (supabaseAnalysis) {
+            console.log('[Results] ✅ Análise encontrada no Supabase');
+            // analyses_v2 já tem o formato correto como JSON
+            const analysisData = supabaseAnalysis.analysis_result;
+            setAnalysisData(analysisData);
+            // Buscar foto da análise ou do localStorage
+            setUserPhoto(supabaseAnalysis.image_url || photo);
           } else {
-            // Dados mock para demonstração
-            const mockData: AnalysisData = {
+            console.log('[Results] ⚠️ Análise não encontrada no Supabase, tentando localStorage...');
+            const savedAnalysis = localStorage.getItem('analysisResult');
+            if (savedAnalysis) {
+              console.log('[Results] Carregando análise do localStorage (fallback)...');
+              const parsedAnalysis = JSON.parse(savedAnalysis);
+              setAnalysisData(parsedAnalysis);
+            } else {
+              // Dados mock para demonstração
+              const mockData: AnalysisData = {
               analise_morfologica: {
                 formato_rosto: "Seu rosto apresenta um formato oval harmonioso, com proporções equilibradas que favorecem a maioria dos estilos de penteados e maquiagem.",
                 proporcao_nariz: "O nariz está bem proporcional ao rosto, com uma ponte reta e narinas simétricas.",
@@ -135,20 +151,24 @@ export default function ResultsPage() {
                 }
               }
             };
+            console.log('[Results] Usando dados mock');
             setAnalysisData(mockData);
             localStorage.setItem('analysisResult', JSON.stringify(mockData));
+            }
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('[Results] Erro ao carregar dados:', error);
+        console.error('[Results] Stack trace:', error instanceof Error ? error.stack : 'N/A');
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [profile]);
 
+  const subscriptionStatus = profile?.subscription_status || 'free';
   const canViewBasicAnalysis = subscriptionStatus === 'standard' || subscriptionStatus === 'premium';
   const canViewWeek1And2 = subscriptionStatus === 'standard' || subscriptionStatus === 'premium';
   const canViewWeek3And4 = subscriptionStatus === 'premium';
@@ -167,8 +187,8 @@ export default function ResultsPage() {
     </div>
   );
 
-  const renderWeekContent = (weekData: WeekData, canView: boolean) => {
-    if (canView && weekData) {
+  const renderWeekContent = (weekData: WeekData | undefined, canView: boolean) => {
+    if (canView && weekData && weekData.recomendacoes && weekData.produtos_sugeridos && weekData.dicas_praticas) {
       return (
         <div className="space-y-4">
           <div>
@@ -201,7 +221,7 @@ export default function ResultsPage() {
     return renderBlurredContent('Conteúdo exclusivo para assinantes. Faça upgrade para desbloquear.');
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-white text-xl">Carregando análise...</p>
@@ -211,7 +231,16 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen px-4 py-8 animate-fade-in">
-      <div className="max-w-5xl mx-auto">
+      <main className="max-w-5xl mx-auto">
+        {/* Botão Voltar */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Voltar ao Dashboard
+        </Link>
+
         {/* User Photo with Badge */}
         <div className="glass-card mb-8">
           <div className="text-center">
@@ -221,7 +250,9 @@ export default function ResultsPage() {
                 className={`px-4 py-1 rounded-full text-sm font-bold ${
                   subscriptionStatus === 'premium'
                     ? 'bg-gradient-to-r from-[#9D50BB] to-[#B565FF] text-white'
-                    : 'bg-gray-600 text-gray-200'
+                    : subscriptionStatus === 'standard'
+                    ? 'bg-gray-600 text-gray-200'
+                    : 'bg-gray-800 text-gray-400'
                 }`}
                 style={{
                   boxShadow: subscriptionStatus === 'premium'
@@ -292,33 +323,33 @@ export default function ResultsPage() {
           {/* Semana 1 */}
           <div className="glass-premium">
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
-              {analysisData?.cronograma_30_dias.semana_1_cabelo.titulo || 'Semana 1: Transformação Capilar'}
+              {analysisData?.cronograma_30_dias?.semana_1_cabelo?.titulo || 'Semana 1: Transformação Capilar'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias.semana_1_cabelo!, canViewWeek1And2)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_1_cabelo, canViewWeek1And2)}
           </div>
 
           {/* Semana 2 */}
           <div className="glass-premium">
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
-              {analysisData?.cronograma_30_dias.semana_2_harmonizacao.titulo || 'Semana 2: Harmonização e Molduras Faciais'}
+              {analysisData?.cronograma_30_dias?.semana_2_harmonizacao?.titulo || 'Semana 2: Harmonização e Molduras Faciais'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias.semana_2_harmonizacao!, canViewWeek1And2)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_2_harmonizacao, canViewWeek1And2)}
           </div>
 
           {/* Semana 3 */}
           <div className="glass-premium">
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
-              {analysisData?.cronograma_30_dias.semana_3_skincare.titulo || 'Semana 3: Rotina de Skincare Personalizada'}
+              {analysisData?.cronograma_30_dias?.semana_3_skincare?.titulo || 'Semana 3: Rotina de Skincare Personalizada'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias.semana_3_skincare!, canViewWeek3And4)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_3_skincare, canViewWeek3And4)}
           </div>
 
           {/* Semana 4 */}
           <div className="glass-premium">
             <h3 className="text-xl font-bold mb-4 text-[#FFFFFF]">
-              {analysisData?.cronograma_30_dias.semana_4_acessorios.titulo || 'Semana 4: Acessórios e Postura'}
+              {analysisData?.cronograma_30_dias?.semana_4_acessorios?.titulo || 'Semana 4: Acessórios e Postura'}
             </h3>
-            {renderWeekContent(analysisData?.cronograma_30_dias.semana_4_acessorios!, canViewWeek3And4)}
+            {renderWeekContent(analysisData?.cronograma_30_dias?.semana_4_acessorios, canViewWeek3And4)}
           </div>
         </div>
 

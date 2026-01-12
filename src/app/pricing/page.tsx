@@ -1,9 +1,15 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/useAuth';
 
 const plans = [
   {
     name: 'Standard',
+    priceId: 'price_1SolpqFYu1W1v2i8pQtgDc9h',
     oldPrice: 'R$ 49,90',
     price: 'R$ 19,90',
     period: 'mês',
@@ -19,6 +25,7 @@ const plans = [
   },
   {
     name: 'Premium',
+    priceId: 'price_1SolqpFYu1W1v2i8P2F635Ii',
     oldPrice: 'R$ 99,90',
     price: 'R$ 29,90',
     period: 'mês',
@@ -37,6 +44,45 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleSubscribe = async (priceId: string, planName: string) => {
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
+
+    setLoadingPlan(planName);
+
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          userId: user.id,
+          userEmail: user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Erro ao criar sessão de pagamento. Tente novamente.');
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 py-8 animate-fade-in">
       <div className="max-w-5xl mx-auto">
@@ -107,12 +153,21 @@ export default function PricingPage() {
 
               <div className="text-center">
                 <button 
-                  className={`w-full ${plan.popular ? 'btn-primary text-lg' : 'btn-secondary'}`}
+                  onClick={() => handleSubscribe(plan.priceId, plan.name)}
+                  disabled={loadingPlan === plan.name}
+                  className={`w-full ${plan.popular ? 'btn-primary text-lg' : 'btn-secondary'} disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                   style={plan.popular ? {
                     boxShadow: '0 0 40px rgba(138, 43, 226, 0.6)'
                   } : {}}
                 >
-                  {plan.buttonText}
+                  {loadingPlan === plan.name ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    plan.buttonText
+                  )}
                 </button>
               </div>
             </div>

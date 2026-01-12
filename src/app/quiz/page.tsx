@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 const questions = [
   {
@@ -97,6 +99,15 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen px-4 py-8 animate-fade-in">
       <div className="max-w-2xl mx-auto">
+        {/* Botão Voltar */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Voltar ao Dashboard
+        </Link>
+
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm text-[#E0E0E0] mb-2 font-medium">

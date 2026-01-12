@@ -3,16 +3,28 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
+import { getUserAnalyses } from '@/lib/auth-helpers';
 import { Sparkles, ArrowRight, FileText, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, profile, loading, logout } = useAuth();
+  const { user, profile, loading, logout, refreshProfile } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [loadingAnalyses, setLoadingAnalyses] = useState(false);
 
   // Login removido temporariamente - dashboard acessível sem autenticação
   // Futuramente será reabilitado
+
+  const handleDropdownToggle = async () => {
+    if (!showDropdown && refreshProfile) {
+      // Ao abrir o dropdown, atualizar os dados do perfil
+      console.log('[Dashboard] 🔄 Atualizando dados do perfil...');
+      await refreshProfile();
+    }
+    setShowDropdown(!showDropdown);
+  };
 
   const handleLogout = async () => {
     logout();
@@ -24,7 +36,36 @@ export default function DashboardPage() {
     return email.substring(0, 2).toUpperCase();
   };
 
-  const isPremium = profile?.subscription_status === 'premium';
+  const subscriptionStatus = profile?.subscription_status || 'free';
+  const isPremium = subscriptionStatus === 'premium';
+  const isStandard = subscriptionStatus === 'standard';
+  const isFree = subscriptionStatus === 'free';
+  
+  const getPlanLabel = () => {
+    if (isPremium) return 'Premium';
+    if (isStandard) return 'Standard';
+    return 'Free';
+  };
+
+  useEffect(() => {
+    const loadAnalyses = async () => {
+      if (user?.id) {
+        console.log('[Dashboard] 📊 Buscando análises do usuário:', user.id);
+        setLoadingAnalyses(true);
+        try {
+          const userAnalyses = await getUserAnalyses(user.id);
+          console.log('[Dashboard] ✅ Análises encontradas:', userAnalyses.length);
+          setAnalyses(userAnalyses);
+        } catch (error) {
+          console.error('[Dashboard] ❌ Erro ao buscar análises:', error);
+        } finally {
+          setLoadingAnalyses(false);
+        }
+      }
+    };
+
+    loadAnalyses();
+  }, [user]);
 
   if (loading) {
     return (
@@ -43,13 +84,13 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="text-3xl font-extrabold bg-gradient-to-r from-[#8A2BE2] via-[#9D4EDD] to-[#8A2BE2] bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+          <Link href="/" className="text-3xl font-extrabold bg-gradient-to-r from-[#8A2BE2] via-[#9D4EDD] to-[#8A2BE2] bg-clip-text text-transparent hover:opacity-80 transition-opacity">
             Visagio Pro
           </Link>
 
           <div className="relative">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
+              onClick={handleDropdownToggle}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8A2BE2] to-[#9D4EDD] flex items-center justify-center text-white text-sm font-bold shadow-lg">
@@ -58,9 +99,11 @@ export default function DashboardPage() {
               <div className={`px-3 py-1 rounded-full text-xs font-bold ${
                 isPremium
                   ? 'bg-gradient-to-r from-[#8A2BE2] to-[#FFD700] text-white'
-                  : 'bg-gray-600 text-gray-300'
+                  : isStandard
+                  ? 'bg-gray-600 text-gray-300'
+                  : 'bg-gray-800 text-gray-400'
               }`}>
-                {isPremium ? 'Premium' : 'Standard'}
+                {getPlanLabel()}
               </div>
             </button>
 
@@ -82,8 +125,10 @@ export default function DashboardPage() {
 
                   <div className="pb-3 border-b border-gray-700">
                     <p className="text-gray-400 text-xs mb-1">Status</p>
-                    <p className={`text-sm font-bold ${isPremium ? 'text-[#8A2BE2]' : 'text-gray-300'}`}>
-                      {isPremium ? '⭐ Plano Premium Ativo' : 'Plano Standard'}
+                    <p className={`text-sm font-bold ${
+                      isPremium ? 'text-[#8A2BE2]' : isStandard ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      {isPremium ? '⭐ Plano Premium Ativo' : isStandard ? 'Plano Standard' : 'Plano Free'}
                     </p>
                   </div>
 
@@ -118,21 +163,21 @@ export default function DashboardPage() {
           {/* Nova Análise */}
           <Link
             href="/quiz"
-            className="group relative overflow-hidden rounded-3xl p-8 transition-all duration-300 hover:scale-105"
+            className="group relative overflow-hidden rounded-3xl p-8 transition-all duration-300 hover:scale-105 flex items-center justify-center"
             style={{
               background: 'linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 100%)',
               boxShadow: '0 10px 40px rgba(138, 43, 226, 0.5)'
             }}
           >
-            <div className="relative z-10">
-              <Sparkles className="w-12 h-12 text-white mb-4" />
+            <div className="relative z-10 text-center">
+              <Sparkles className="w-12 h-12 text-white mb-4 mx-auto" />
               <h2 className="text-2xl font-bold text-white mb-2">
                 Nova Análise Facial
               </h2>
               <p className="text-white/80 mb-4">
                 Comece sua jornada de transformação com nossa IA
               </p>
-              <div className="flex items-center gap-2 text-white font-semibold">
+              <div className="flex items-center gap-2 text-white font-semibold justify-center">
                 Começar agora
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </div>
@@ -152,12 +197,48 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-white mb-2">
               Minhas Análises
             </h2>
-            <p className="text-gray-400 mb-4">
-              Você ainda não possui análises salvas
-            </p>
-            <p className="text-gray-500 text-sm">
-              Complete seu primeiro quiz para ver seus resultados aqui
-            </p>
+            
+            {loadingAnalyses ? (
+              <p className="text-gray-400 mb-4">Carregando análises...</p>
+            ) : analyses.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-gray-400 mb-3">
+                  {analyses.length} {analyses.length === 1 ? 'análise encontrada' : 'análises encontradas'}
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                  {analyses.map((analysis) => (
+                    <button
+                      key={analysis.id}
+                      onClick={() => {
+                        localStorage.setItem('currentAnalysisId', analysis.id);
+                        router.push('/results');
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors border border-gray-700 hover:border-[#8A2BE2]"
+                    >
+                      <p className="text-sm text-white font-medium">Análise Facial</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-400 mb-4">
+                  Você ainda não possui análises salvas
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Complete seu primeiro quiz para ver seus resultados aqui
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -178,23 +259,42 @@ export default function DashboardPage() {
               <p className="text-gray-400">
                 {isPremium
                   ? 'Você tem acesso completo a todas as funcionalidades'
-                  : 'Faça upgrade para desbloquear todas as semanas'}
+                  : isStandard
+                  ? 'Você tem acesso às 2 primeiras semanas. Faça upgrade para desbloquear todas'
+                  : 'Faça upgrade para desbloquear análises e planos personalizados'}
               </p>
             </div>
             <div className={`px-4 py-2 rounded-full text-sm font-bold ${
               isPremium
                 ? 'bg-gradient-to-r from-[#8A2BE2] to-[#FFD700] text-white'
-                : 'bg-gray-700 text-gray-300'
+                : isStandard
+                ? 'bg-gray-700 text-gray-300'
+                : 'bg-gray-800 text-gray-500'
             }`}>
-              {isPremium ? 'Premium' : 'Standard'}
+              {getPlanLabel()}
             </div>
           </div>
 
-          {!isPremium && (
+          {isPremium ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 text-gray-400">
+              <div className="flex items-center gap-3 text-[#8A2BE2]">
                 <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
-                <span>Acesso às 2 primeiras semanas</span>
+                <span className="font-semibold">Todas as 4 semanas desbloqueadas</span>
+              </div>
+              <div className="flex items-center gap-3 text-[#8A2BE2]">
+                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
+                <span className="font-semibold">Análise morfológica completa</span>
+              </div>
+              <div className="flex items-center gap-3 text-[#8A2BE2]">
+                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
+                <span className="font-semibold">Acesso ilimitado a análises</span>
+              </div>
+            </div>
+          ) : isStandard ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-[#8A2BE2]">
+                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
+                <span>Semanas 1 e 2 desbloqueadas</span>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <div className="w-2 h-2 rounded-full bg-gray-600"></div>
@@ -212,22 +312,27 @@ export default function DashboardPage() {
                 Fazer Upgrade para Premium
               </Link>
             </div>
-          )}
-
-          {isPremium && (
+          ) : (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 text-[#8A2BE2]">
-                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
-                <span className="font-semibold">Todas as 4 semanas desbloqueadas</span>
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                <span>Todas as semanas bloqueadas</span>
               </div>
-              <div className="flex items-center gap-3 text-[#8A2BE2]">
-                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
-                <span className="font-semibold">Suporte prioritário 24/7</span>
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                <span>Análise morfológica bloqueada</span>
               </div>
-              <div className="flex items-center gap-3 text-[#8A2BE2]">
-                <div className="w-2 h-2 rounded-full bg-[#8A2BE2]"></div>
-                <span className="font-semibold">Análises ilimitadas</span>
-              </div>
+
+              <Link
+                href="/pricing"
+                className="inline-block mt-4 px-6 py-3 rounded-lg font-bold text-white transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #8A2BE2 0%, #9D4EDD 100%)',
+                  boxShadow: '0 5px 20px rgba(138, 43, 226, 0.4)'
+                }}
+              >
+                Fazer Upgrade
+              </Link>
             </div>
           )}
         </div>

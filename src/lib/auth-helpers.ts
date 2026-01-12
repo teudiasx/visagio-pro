@@ -207,36 +207,29 @@ export async function saveQuizResult(userId: string, answers: any) {
  */
 export async function saveAnalysis(
   userId: string,
-  quizResultId: string | null,
   imageUrl: string,
-  morphologicalAnalysis: any,
-  weeklyContent: {
-    week_1: string;
-    week_2: string;
-    week_3: string;
-    week_4: string;
-  },
-  isPaid: boolean = false
+  quizAnswers: any,
+  analysisResult: any
 ) {
   try {
     const { data, error } = await supabase
-      .from('analyses')
+      .from('analyses_v2')
       .insert({
         user_id: userId,
-        quiz_result_id: quizResultId,
         image_url: imageUrl,
-        morphological_analysis: morphologicalAnalysis,
-        week_1_content: weeklyContent.week_1,
-        week_2_content: weeklyContent.week_2,
-        week_3_content: weeklyContent.week_3,
-        week_4_content: weeklyContent.week_4,
-        is_paid: isPaid,
+        quiz_answers: quizAnswers,
+        analysis_result: analysisResult,
       })
       .select()
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao salvar análise:', error);
+      console.error('Erro ao salvar análise:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return null;
     }
 
@@ -253,7 +246,7 @@ export async function saveAnalysis(
 export async function getAnalysis(analysisId: string) {
   try {
     const { data, error } = await supabase
-      .from('analyses')
+      .from('analyses_v2')
       .select('*')
       .eq('id', analysisId)
       .maybeSingle();
@@ -276,7 +269,7 @@ export async function getAnalysis(analysisId: string) {
 export async function getUserAnalyses(userId: string) {
   try {
     const { data, error } = await supabase
-      .from('analyses')
+      .from('analyses_v2')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

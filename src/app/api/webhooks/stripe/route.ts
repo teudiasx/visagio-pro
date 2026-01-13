@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-  try {
     console.log('🔄 [WEBHOOK] Processando evento:', event.type);
     
     switch (event.type) {
@@ -290,13 +289,6 @@ export async function POST(request: NextRequest) {
         error: 'Webhook handler failed',
         details: error?.message
       },
-      { status: 500 }
-    );
-  } catch (outerError: any) {
-    console.error('❌❌❌ [WEBHOOK] ERRO CRÍTICO externo ❌❌❌');
-    console.error('Erro:', outerError);
-    return NextResponse.json(
-      { error: 'Fatal error' },
       { status: 500 }
     );
   }

@@ -26,7 +26,7 @@ export async function analyzeWithGPT4oMini(
 ): Promise<{ analysis: MorphologicalAnalysis; plan: WeeklyPlan }> {
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'system',
@@ -105,17 +105,25 @@ Analise a imagem e crie um plano personalizado de 30 dias.`
           ]
         }
       ],
-      max_tokens: 2000,
+      max_completion_tokens: 4096,
       temperature: 0.7,
     });
 
+    console.log('✅ Resposta recebida da OpenAI');
+    
     const content = response.choices[0].message.content;
     if (!content) {
       throw new Error('Resposta vazia da API OpenAI');
     }
 
+    console.log('=== RESPOSTA DO GPT ===');
+    console.log(content);
+    console.log('======================');
+
     // Parse do JSON retornado
     const result = JSON.parse(content);
+    
+    console.log('✅ JSON parseado com sucesso');
     
     return {
       analysis: result.analysis,

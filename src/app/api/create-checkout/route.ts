@@ -6,17 +6,28 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(request: NextRequest) {
+  console.log('💳 [CHECKOUT] Iniciando criação de checkout session');
+  
   try {
+    console.log('📦 [CHECKOUT] Parseando body do request...');
     const { priceId, userId, userEmail } = await request.json();
 
+    console.log('📝 [CHECKOUT] Dados recebidos:', {
+      priceId,
+      userId,
+      userEmail,
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY
+    });
+
     if (!priceId || !userId || !userEmail) {
+      console.error('❌ [CHECKOUT] Validação falhou - campos obrigatórios ausentes');
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Criar checkout session
+    console.log('🔄 [CHECKOUT] Criando checkout session no Stripe...');
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -39,21 +50,30 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('✅ [CHECKOUT] Sessão criada com sucesso:', {
+      sessionId: session.id,
+      url: session.url,
+      customerId: session.customer,
+      subscriptionId: session.subscription
+    });
+
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error: any) {
-    console.error('❌ Erro ao criar checkout session:', {
-      message: error.message,
-      stack: error.stack,
-      type: error.type,
-      code: error.code,
-      statusCode: error.statusCode,
-      raw: error.raw
-    });
+    console.error('❌❌❌ [CHECKOUT] ERRO CRÍTICO ao criar checkout session ❌❌❌');
+    console.error('Tipo:', error?.constructor?.name);
+    console.error('Mensagem:', error?.message);
+    console.error('Stack:', error?.stack);
+    console.error('Stripe Type:', error?.type);
+    console.error('Stripe Code:', error?.code);
+    console.error('Status Code:', error?.statusCode);
+    console.error('Raw:', error?.raw);
+    console.error('Erro completo:', JSON.stringify(error, null, 2));
+    
     return NextResponse.json(
       { 
         error: 'Failed to create checkout session',
         details: error.message,
-        type: error.type
+        type: error.type || error?.constructor?.name
       },
       { status: 500 }
     );
